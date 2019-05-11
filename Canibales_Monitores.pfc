@@ -1,0 +1,63 @@
+program Canibales_Monitores;
+const
+	NC =10;
+	NP=3;
+monitor marmita;
+	export comer,llenar;
+	var
+		esperando,raciones :integer;
+		despierta,mLLena:condition;
+procedure comer(id:integer);
+	begin
+		if raciones=0 then 
+			begin
+				writeln('Canibal ',id,' no hay comida');
+				resume(despierta);
+				delay(mLLena);
+			end;
+		raciones:=raciones-1;
+		writeln('Canibal ',id,' come,quedan ',raciones,' raciones');
+	end;
+procedure llenar;
+	var i :integer;
+	begin
+		if raciones=0 then
+			begin
+				writeln('	Cocinero cuece ',NP,' raciones mas de misionero');
+				raciones:=NP;
+				for i:=1 to raciones do
+					resume(mLLena);
+			end;
+		delay(despierta);
+	end;
+begin 
+	raciones:=0;
+end;
+
+process cocinero;
+	begin
+		repeat 
+			marmita.llenar;
+			{sleep(3);}
+		forever;
+	end;
+process type canibal(id:integer);
+	begin
+		repeat
+			{sleep(Random(6));}
+			marmita.comer(id);
+		forever
+	end;
+	
+var 
+	i :integer;
+	cani : array  [1..NP] of canibal;
+begin
+
+	cobegin
+	 
+		cocinero;
+		for i:=1 to NP do
+			cani[i](i);
+	coend;
+end.
