@@ -1,0 +1,99 @@
+program jerseys;
+type synchan = channel of synchronous;
+var putm,getm,putc,getc:synchan;
+	p :semaphore;
+
+process cestam(var putm,getm : synchan );
+const capbuffer =4;
+var 
+	enbuffer :integer;
+begin
+	enbuffer:=0;
+	repeat
+		select
+			when enbuffer < capbuffer =>
+			putm ? any;
+			enbuffer := enbuffer +1;
+			wait(p);
+			writeLN('Una manga mas',enbuffer,'mangas');
+			signal(p);
+		or 
+			when enbuffer > 1 =>{si hay dos mangas}
+			getm ! any;
+			enbuffer:= enbuffer -2;
+		or
+			terminate;
+	
+		end;{del select}
+	forever
+end;	
+process cestac(var putc,getc: synchan);
+	const capbuff = 3;
+	var
+		enbuffer:integer;
+	begin
+	 enbuffer:=0;
+	 	repeat
+	 		select
+	 			when enbuffer<capbuff =>
+	 				putc ? any;
+	 				enbuffer:= enbuffer+1;
+	 				wait(p);
+	 				writeLn('Un cuerpo mas',enbuffer,'cuerpos');
+	 				signal(p);
+	 		or
+	 			when enbuffer > 0 =>
+	 				getc ! any;
+	 				enbuffer := enbuffer - 1;
+	 		or
+	 			terminate;
+	 		end{ select}
+	 	forever
+	end;
+process mangas (var put :synchan);
+	var i : integer;
+	begin 
+		repeat
+			putm ! any ;
+			sleep(1);
+		forever;
+	end;
+process cuerpos(var put :synchan);
+	var i:integer;
+	begin
+		repeat
+			putc ! any;
+			sleep(2);
+		forever;
+	end;
+process une (var getm,getc:synchan);
+	var item : integer;
+	begin	
+		repeat
+			select
+				getm ? any ;
+				wait(p);
+				writeln('cojo dos mangas');
+				signal(p);
+				getc ? any ;
+				wait(p);
+				writeln('cojo el cuerpo');
+				signal(p);
+				sleep(2);
+			or 
+				terminate;
+			end;
+		forever
+	end;
+		
+
+begin
+	initial(p,1);
+	cobegin
+		mangas(putm);
+		cuerpos(putc);
+		cestac(putc,getc);
+		cestam(putm,getm);
+		une(getm,getc);
+	coend;
+end.
