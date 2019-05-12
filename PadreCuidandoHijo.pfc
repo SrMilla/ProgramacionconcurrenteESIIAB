@@ -1,0 +1,76 @@
+program PadreCuidandoHijo;
+const NPORC = 3;
+	  NVECES=10;	
+type intchan = channel of integer;
+	 synchan= channel of synchronous;
+	 
+var
+	chComida: intchan;
+	chWakeup: synchan;
+	m:semaphore;
+procedure comer(var Porciones : integer;var chComida: intchan);
+	begin
+		if( porciones =0) then
+			begin
+			wait(m);
+			writeln('Hijo:donde esta mi comida');
+			signal(m);
+			chComida ? porciones;
+			end;
+		porciones:=porciones-1;
+		wait(m);
+		writeln('Hijo:mmmm delicioso');
+		signal(m);
+		sleep(random(4)+1);
+	end;
+procedure dormir(var chWakeUp : synchan);
+	begin
+		sleep(5);
+		wait(m);
+		writeln('hijo:It is time to wake up my PAPA');
+		signal(m);
+		chWakeUp ! any;
+	end; 
+process hijo;
+	var i: integer;
+		porciones:integer;
+	begin
+		porciones :=0;
+		for i:=1 to NVECES do
+			begin
+				sleep(Random(5)+2);
+				wait(m);
+				writeln('Hijo:Pues aqui jugando un ratete ');
+				signal(m);
+				comer(porciones,chcomida);
+				dormir(chWakeUp);
+			end;
+	end;
+process papa;
+	var i :integer;
+	begin
+		repeat
+			select
+				chComida ! NPORC;
+				wait(m);
+				writeln('		Padre:come gordo,dijo el padre');
+				signal(m);
+			or
+				chWakeUp ? any;
+				wait(m);
+				write('		Padre;aupa');
+				signal(m);
+			or 
+				terminate;
+			end;
+		forever;
+	end;
+	
+				
+begin
+	initial(m,1);
+	cobegin
+		hijo;
+		papa;
+	coend;
+end.
