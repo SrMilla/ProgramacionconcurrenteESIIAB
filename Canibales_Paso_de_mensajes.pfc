@@ -1,0 +1,62 @@
+program Canibales_Paso_de_mensajes;
+const	MAXC = 3;
+		NPOR = 3;
+var come : array[1..MAXC] OF channel of synchronous;
+	repone : channel of synchronous;
+	mutex : semaphore;
+process type Tcanibal (id: integer);
+	begin
+		repeat
+			come[id] ! any;
+			wait (mutex);
+			writeLN('canibal',id,'comiendo misionero');
+			signal(mutex);
+			sleep(5);
+		forever;
+	end;
+
+process cocinero;
+	var porciones,i :integer;
+	begin
+		porciones:=0;
+		repeat
+			repone ? any;
+			wait(mutex);
+			writeln('Cocinero llena marmita');
+			signal(mutex);
+		forever;
+	end;
+process marmita;
+	var porciones,n:integer;
+	begin 
+		porciones:=0;
+		repeat		
+			select
+			for n:=1 to MAXC replicate
+				when porciones > 0 =>
+					come[n] ? any;
+					porciones := porciones-1;
+					if porciones = 0 then 
+						begin
+							wait(mutex);writeln('--Marmita vacia--');signal(mutex);
+						end;
+			or
+				when porciones = 0=>
+					repone ! any ;
+					porciones := NPOR;
+			or
+				terminate;
+			end;{select}
+		forever;
+	end;
+var
+	canibal :array [ 1..MAXC] of Tcanibal;
+	i:integer;
+	begin initial(mutex,1);
+		cobegin	
+	 		for i :=1 to MAXC do
+	 			canibal[i](i);
+	 		cocinero;
+	 		marmita;
+ 		coend;
+ 	end.

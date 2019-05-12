@@ -1,1 +1,1 @@
-Examenes de concurrente
+Estos son los ejercicios de Programacion concurrente y en tiempo real de la universidad UCLM de Albacete
