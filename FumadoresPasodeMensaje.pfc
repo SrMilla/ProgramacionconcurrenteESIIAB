@@ -1,0 +1,71 @@
+program fumadorespasodemensajes;
+const MAXFUM = 3;
+
+type
+	Tsynchan = channel of synchronous;
+	Tingredientes = array [1..2] of integer;
+var
+	pidoI,fumando : array [1..MAXFUM] of Tsynchan;
+	CanalAgente : channel of Tingredientes;
+process agente;
+	var ing :Tingredientes;
+	i:integer;
+	begin
+		for i :=1 to 5 do
+		begin
+			ing[1]:= random(2)+1;
+			ing[2]:=random(2)+1;
+			while (ing[1]=ing[2]) do
+				ing[2]:= random(2)+1;
+			canalAgente ! ing;
+		end;
+	end;
+process type Tfumador(id:integer);
+	begin
+		repeat
+			select
+				pidoI[id] ! any ;
+				writeln('Fumador ',id,' liado');
+				sleep(5);
+				writeln('cigarro fumado ');
+				fumando[id] ! any;
+			or
+				terminate;
+			end;
+		forever;
+	end;
+process mesa;
+	var
+		i : integer;
+		ing : Tingredientes;
+		mesaVacia: boolean;
+	begin
+		mesaVacia:= true;
+		repeat
+			select
+				for i :=1 to MAXFUM replicate
+					when(ing[1] <> i) AND (ing[2]<>i) AND NOT mesaVacia =>
+							pidoI[i] ? any;
+							fumando[i] ? any;
+							mesaVacia:=true;
+					or
+					when mesaVacia =>
+						canalAgente ? ing;
+						writeln('Agente pone ',ing[1],ing[2],'en la mesa');
+						mesaVacia:= false;
+					or 
+						terminate;
+			end;
+		forever;
+	end;
+var 
+	j:integer;
+	fumador : array[1.. MAXFUM] of Tfumador;	
+begin
+	cobegin
+		agente;
+		mesa;
+		for j := 1 to MAXFUM do 
+			fumador[j](j);
+	coend
+end.
