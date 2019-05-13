@@ -1,0 +1,43 @@
+program SolucionPasoDeMensajesPrimerEjercicio;
+var llegaA,sigueB:channel of synchronous;
+
+process pA;
+	var c : integer;
+	begin
+		repeat
+			write('PA1, ');
+			llegaA ! any;
+			write('PA2, ');
+		forever;
+	end;
+process pB;
+	begin
+		repeat
+			write('PB1,');
+			sigueB ? any ;
+			write('PB2, ');
+		forever;
+	end;
+process citaS;
+	var pAHecho:boolean;
+	begin
+		pAHecho:= false;
+		repeat
+			select
+				llegaA ? any;
+				pAHecho := true;
+			or
+			when pAHecho =>
+				sigueB ! any;
+				pAHecho := false;
+			end;
+		forever;
+	end;
+
+
+begin
+	cobegin
+		pA;pB;citaS;
+		
+	coend;
+end.
