@@ -1,0 +1,40 @@
+program Ejercicio1Monitores;
+monitor cita;
+	export llegaA,llegaB;
+	var aArrived:boolean;
+	var paroB:condition;
+	procedure llegaA;
+		begin
+			aArrived:=true;
+			resume(paroB);
+		end;
+	procedure llegaB;
+		begin
+			if Not (aArrived) then 
+				delay(paroB);
+			aArrived:=false;
+		end;
+	begin
+	aArrived:=false;
+	end;
+process pA;
+	begin
+		repeat
+			write('PA1, ');
+			cita.llegaA;
+			write('PA2, ');
+		forever;
+	end;
+process pB;
+	begin 
+		repeat
+			write('PB1, ');
+			cita.llegaB;
+			write('PB2, ');
+		forever;
+	end;
+begin
+	cobegin
+		pA;pB;
+	coend
+end.
