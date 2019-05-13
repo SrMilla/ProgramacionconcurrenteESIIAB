@@ -1,0 +1,45 @@
+program SolucionMonitoresEjercicio2;
+const N=4;
+monitor barrera;
+	export await,init;
+	var cola: condition;
+		cont,num: integer;
+	procedure init(n : integer);
+		begin
+			num:=n;
+		end;
+	procedure await;
+		begin
+			cont:=cont + 1;
+			if cont < num then
+				delay(cola)
+			else
+				begin
+					write(' ');
+					cont := 0;
+					while (not empty(cola)) do
+						resume(cola);
+				end;
+		end;
+	begin
+		cont :=0;
+	end;
+process type TProc ( id : integer);
+	begin
+		repeat
+			write(id);
+			barrera.await;
+		forever;
+	end;
+var proc : array [1 .. N] of TProc;
+	i : integer;
+	
+
+
+begin
+	cobegin
+		barrera.init(N);
+		for i := 1 to N do
+			proc[i](i);
+	coend;
+end.
