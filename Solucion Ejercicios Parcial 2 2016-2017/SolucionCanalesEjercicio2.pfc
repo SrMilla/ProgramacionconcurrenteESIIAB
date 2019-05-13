@@ -1,0 +1,43 @@
+program SolucionCanalesEjercicio2;
+const N=4;
+type synChan = channel of synchronous;
+var
+	llega,go : array[1..N] of synChan;
+process type TProc (id : integer);
+	begin
+		repeat
+			write(id);
+			llega[id] ! any;
+			go[id] ? any;
+		forever;
+	end;
+process barrera;
+	var cont,i,j:integer;
+	begin
+		cont:=0;
+		repeat
+			repeat
+				select
+					for i:= 1 to N replicate
+						llega[i] ? any;
+					cont:=cont +1;
+				or
+					terminate;
+				end;
+			until cont = N;
+			cont :=0;
+			write(' ');
+			for j:= 1 to N do
+				go[j] ! any;
+		forever;
+	end;
+var proc : array[1..N] of TProc;
+i : integer;
+	
+begin
+	cobegin
+		for i := 1 to N do
+			proc[i](i);
+		barrera;
+	coend;	
+end.
