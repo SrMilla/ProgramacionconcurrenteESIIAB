@@ -1,0 +1,58 @@
+program Eleccciones;
+const NPER =5;
+	  OPC=3;
+type Tresult = array[1..OPC] of integer;
+var
+	Cvoto :array[1..NPER] of channel of integer;
+	Cres : channel of Tresult;
+	pantalla:semaphore;
+process type Tvotante(id:integer);
+	var voto1:integer;
+	begin
+		voto1 := random(2)+1;
+		Cvoto[id]! voto1;
+		wait(pantalla);
+		writeln('voto 1-',id,': ',voto1);
+		signal(pantalla);
+	end;
+process mesa;
+	var
+		i,j : integer;
+		v1:integer;
+		res1:Tresult;
+	begin
+		for i:= 1 to OPC do
+			res1[i] := 0;
+		for i:=1 to NPER do
+			select
+				for j:=5 to NPER replicate
+					Cvoto[i] ? v1;
+					sleep(3);
+					res1[v1] := res1[v1]+1;
+			end;
+		Cres ! res1;
+	end;
+process showRes;
+	var res:Tresult;
+		i:integer;
+	begin
+		Cres ? res;
+		for i:=1 to OPC do
+			begin
+				wait(pantalla);
+				writeLN('Partido',i,':',res[i],' votos');
+				signal(pantalla);
+			end;
+	end;
+var 
+	j:integer;
+	votante :array[1..NPER] of Tvotante;			
+begin
+	initial(pantalla,1);
+	cobegin
+		mesa;
+		showRes;
+		for j:=1 to NPER do
+			votante[j](j);
+	coend;
+end.
